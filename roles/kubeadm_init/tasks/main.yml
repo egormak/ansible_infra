@@ -1,0 +1,38 @@
+---
+
+- name: Copy config file
+  ansible.builtin.template:
+    src: kubeadm-config.yml
+    dest: /root/kubeadm-config.yml
+  when:
+    - inventory_hostname == groups['kubernetes_controlplane'][0]
+
+- name: Init KubeAdm
+  command: kubeadm init --upload-certs --config /root/kubeadm-config.yml
+  # run_once: true
+  when:
+    - inventory_hostname == groups['kubernetes_controlplane'][0]
+
+- name: Create folder
+  ansible.builtin.file:
+    path: /root/.kube
+    state: directory
+    mode: '0755'
+  # run_once: true
+  when:
+    - inventory_hostname == groups['kubernetes_controlplane'][0]
+
+- name: Copy config admin file
+  ansible.builtin.copy:
+    src: /etc/kubernetes/admin.conf
+    dest: /root/.kube/config
+    owner: root
+    group: root
+    mode: '0644'
+    remote_src: yes
+  # run_once: true
+  when:
+    - inventory_hostname == groups['kubernetes_controlplane'][0]
+
+#kubeadm join 192.168.122.20:6443 --token wqttr8.i3ajly4fjfjz2p3p \
+#        --discovery-token-ca-cert-hash sha256:bacec5692a8f585589d1127d5a6d5621a2328d6bda9a80289a819237d12578c4

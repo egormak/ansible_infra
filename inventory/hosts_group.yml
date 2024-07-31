@@ -1,0 +1,13 @@
+all:
+  children:
+    kubernetes_cluster:
+      children:
+        kubernetes_controlplane:
+        kubernetes_worker:
+    kubernetes_controlplane:
+      hosts:
+        kuber-controlplane01:
+    kubernetes_worker:
+      hosts:
+        kuber-worker01:
+        kuber-worker02:

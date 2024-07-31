@@ -1,0 +1,31 @@
+---
+
+- name: Add an apt key by id from a keyserver
+  ansible.builtin.apt_key:
+    url: "https://pkgs.k8s.io/core:/stable:/v{{kubernetes_major}}/deb/Release.key"
+    state: present
+    keyring: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kuber Repo
+  ansible.builtin.apt_repository:
+    repo: deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{kubernetes_major}}/deb/ /
+    state: present
+    filename: kubernetes
+
+- name: Install Kuber Tools
+  ansible.builtin.apt:
+    name:
+      - "kubelet={{kubernetes_version}}"
+      - "kubeadm={{kubernetes_version}}"
+      - "kubectl={{kubernetes_version}}"
+    state: present
+    update_cache: true
+
+- name: Prevent Kuber upgraded
+  dpkg_selections:
+    name: "{{item}}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubeadm
+    - kubectl

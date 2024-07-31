@@ -1,0 +1,17 @@
+---
+
+- name: Copy Config file
+  template:
+    src: haproxy.cfg
+    dest: /etc/haproxy/haproxy.cfg
+    backup: yes
+  notify:
+    - haproxy reload
+  tags:
+    - haproxy_config
+
+- name: restart haproxy
+  systemd:
+    name: haproxy
+    state: restarted
+    enabled: yes

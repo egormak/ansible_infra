@@ -1,0 +1,4 @@
+---
+
+kubernetes_port: 8443
+haproxy_port: 9643

@@ -1,0 +1,33 @@
+---
+
+# Describe: Install and Configure Kubernetes for Service
+# vm_name:
+## Local:
+### ContralPlane: kuber-controlplane01
+### Worker: kuber-worker01, kuber-worker02
+
+#### General Install On all Kuber Servers
+- name: Install and Configure Kuber Servers
+  hosts: "{{ VM_NAME | default(\"kubernetes_cluster\") }}"
+  remote_user: root
+  roles:
+    # - { role: network_virtual, tags: [ 'network' ] }
+    - { role: common, tags: [ 'common' ] }
+    - { role: haproxy_kuber, tags: [ 'haproxy' ] }
+    - { role: containerd, tags: [ 'containerd' ] }
+    - { role: kubeadm, tags: [ 'kubeadm' ] }
+
+#### Configure only KuberMaster Servers
+- name: Install and Configure KuberMaster
+  hosts: "{{ VM_NAME | default('kubernetes_controlplane') }}"
+  remote_user: root
+  roles:
+    - { role: kubeadm_init, tags: [ 'kubeadm_init' ] }
+
+#### Configure only KuberNode Servers_V2
+### Set Group Kubernetes because delegate_to not work correct
+- name: Install and Configure KuberNode
+  hosts: "kubernetes_cluster"
+  remote_user: root
+  roles:
+    - { role: kubeadm_join, tags: ['kubeadm_join'] }

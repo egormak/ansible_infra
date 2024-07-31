@@ -1,0 +1,28 @@
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: systemd
+imageGCHighThresholdPercent: 75
+imageGCLowThresholdPercent: 70
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: ClusterConfiguration
+controlPlaneEndpoint: "127.0.0.1:8443"
+apiServer:
+  certSANs:
+    - "127.0.0.1"
+controllerManager:
+  extraArgs:
+    bind-address: 0.0.0.0
+etcd:
+  local:
+    extraArgs:
+      listen-metrics-urls: "http://0.0.0.0:2381"
+scheduler:
+  extraArgs:
+    bind-address: 0.0.0.0
+---
+apiVersion: kubeadm.k8s.io/v1beta3
+kind: InitConfiguration
+skipPhases:
+  - "addon/kube-proxy"

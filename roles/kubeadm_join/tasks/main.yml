@@ -1,0 +1,52 @@
+---
+
+- name: Get Token
+  ansible.builtin.command: kubeadm token create
+  register: kube_token
+  run_once: true
+  delegate_to: "{{ groups['kubernetes_controlplane'][0] }}"
+
+- name: Get cert hash
+  ansible.builtin.shell: openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | openssl dgst -sha256 -hex | sed 's/^.* //'
+  register: kube_crt_hash
+  run_once: true
+  delegate_to: "{{ groups['kubernetes_controlplane'][0] }}"
+
+- name: Get Token
+  ansible.builtin.command: kubeadm certs certificate-key
+  register: kube_cert_key
+  run_once: true
+  delegate_to: "{{ groups['kubernetes_controlplane'][0] }}"
+
+- name: Upload to Secret New Certs
+  command: kubeadm init phase upload-certs --upload-certs --certificate-key={{kube_cert_key.stdout}}
+  run_once: true
+  delegate_to: "{{ groups['kubernetes_controlplane'][0] }}"
+
+- name: Join Server Contral Plain
+  ansible.builtin.command: kubeadm join 127.0.0.1:8443 --control-plane --token {{kube_token.stdout}} --discovery-token-ca-cert-hash sha256:{{kube_crt_hash.stdout}} --certificate-key {{kube_cert_key.stdout}}
+  when:
+    - inventory_hostname in groups['kubernetes_controlplane']
+    - (VM_NAME is defined and inventory_hostname in VM_NAME) or (VM_NAME is not defined)
+
+- name: Join Server Node
+  ansible.builtin.command: kubeadm join 127.0.0.1:8443 --token {{kube_token.stdout}} --discovery-token-ca-cert-hash sha256:{{kube_crt_hash.stdout}}
+  when:
+    - inventory_hostname in groups['kubernetes_worker']
+    - (VM_NAME is defined and inventory_hostname in VM_NAME) or (VM_NAME is not defined)
+
+- name: Set Label
+  ansible.builtin.command: kubectl label nodes {{item}} {{hostvars[item].labels_l | join(" ")}}
+  run_once: true
+  delegate_to: "{{ groups['kubernetes_controlplane'][0] }}"
+  loop: "{{VM_NAME | default(groups['kubernetes_controlplane'])}}"
+  when:
+    - hostvars[item].labels_l is defined
+
+- name: Set Taint
+  ansible.builtin.command: kubectl taint node {{item}} {{hostvars[item].tolaration_l | join(" ")}}
+  run_once: true
+  delegate_to: "{{ groups['kubernetes_controlplane'][0] }}"
+  loop: "{{VM_NAME | default(groups['kubernetes_cluster'])}}"
+  when:
+    - hostvars[item].tolaration_l is defined

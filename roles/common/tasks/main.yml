@@ -1,0 +1,79 @@
+---
+
+- name: Set hostname
+  hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Run the equivalent of "apt-get update" as a separate step
+  apt:
+    update_cache: yes
+
+- name: upgrade all packages
+  apt:
+    name: '*'
+    state: latest
+
+- name: Remove useless packages from the cache
+  apt:
+    autoclean: yes
+
+- name: Remove dependencies that are no longer required
+  apt:
+    autoremove: yes
+
+- name: Install additional packages
+  apt:
+    name:
+      - git
+      - rsync
+      - wget
+      - tcpdump
+      - unzip
+      - bash-completion
+      - ntp
+      - htop
+      - atop
+      - iftop
+      - nano
+      - mc
+      - traceroute
+      - telnet
+      - net-tools
+      - whois
+      - lsof
+    state: present
+    update_cache: yes
+
+- name: Create folder for mc settings files.
+  file:
+    path: /root/.config/mc
+    state: directory
+
+- name: Copying mc settings files.
+  template:
+    src: "{{item}}"
+    dest: /root/.config/mc/
+  loop:
+    - ini
+    - panels.ini
+
+- name: Set timezone to Europe/Kyiv
+  community.general.timezone:
+    name: Europe/Kyiv
+
+- name: Reboot Server
+  reboot:
+
+#- name: Reboot Server
+#  shell: shutdown -r +1
+#  async: 0
+#  poll: 0
+
+- name: Wait Server
+  ansible.builtin.wait_for:
+    host: "{{ ansible_host }}"
+    port: "{{ansible_port}}"
+    delay: 10
+    state: started
+    timeout: 120
+  connection: local
