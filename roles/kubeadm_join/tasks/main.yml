@@ -27,6 +27,7 @@
   ansible.builtin.command: kubeadm join 127.0.0.1:8443 --control-plane --token {{kube_token.stdout}} --discovery-token-ca-cert-hash sha256:{{kube_crt_hash.stdout}} --certificate-key {{kube_cert_key.stdout}}
   when:
     - inventory_hostname in groups['kubernetes_controlplane']
+    - inventory_hostname != groups['kubernetes_controlplane'][0]
     - (VM_NAME is defined and inventory_hostname in VM_NAME) or (VM_NAME is not defined)
 
 - name: Join Server Node
